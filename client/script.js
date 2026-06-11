@@ -1,6 +1,6 @@
 console.log("SCRIPT LOADED");
 
-const socket = io("http://localhost:3000");
+const socket = io("https://omegle-clone-s600.onrender.com");
 
 socket.on("connect", () => {
     console.log("CONNECTED TO SERVER", socket.id);
