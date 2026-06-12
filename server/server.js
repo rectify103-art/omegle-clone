@@ -54,7 +54,7 @@ io.on("connection", (socket) => {
         socket.partner = waitingUser;
         waitingUser.partner = socket;
 
-        // New user becomes initiator
+        // Only one initiator
         socket.emit("matched", {
             initiator: true
         });
@@ -74,7 +74,7 @@ io.on("connection", (socket) => {
     }
 
     // =========================
-    // CHAT MESSAGES
+    // CHAT
     // =========================
 
     socket.on("message", (msg) => {
@@ -112,7 +112,7 @@ io.on("connection", (socket) => {
             oldPartner.partner = null;
             oldPartner.emit("partnerDisconnected");
 
-            if (waitingUser === null) {
+            if (!waitingUser) {
 
                 waitingUser = oldPartner;
                 oldPartner.emit("waiting");
