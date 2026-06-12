@@ -21,7 +21,32 @@ io.on("connection", (socket) => {
     onlineUsers++;
     io.emit("onlineCount", onlineUsers);
 
-    // Matchmaking
+    // =========================
+    // WEBRTC SIGNALING
+    // =========================
+
+    socket.on("offer", (offer) => {
+        if (socket.partner) {
+            socket.partner.emit("offer", offer);
+        }
+    });
+
+    socket.on("answer", (answer) => {
+        if (socket.partner) {
+            socket.partner.emit("answer", answer);
+        }
+    });
+
+    socket.on("ice-candidate", (candidate) => {
+        if (socket.partner) {
+            socket.partner.emit("ice-candidate", candidate);
+        }
+    });
+
+    // =========================
+    // MATCHMAKING
+    // =========================
+
     if (waitingUser) {
 
         console.log("MATCHED:", waitingUser.id, socket.id);
@@ -29,8 +54,14 @@ io.on("connection", (socket) => {
         socket.partner = waitingUser;
         waitingUser.partner = socket;
 
-        socket.emit("matched");
-        waitingUser.emit("matched");
+        // New user becomes initiator
+        socket.emit("matched", {
+            initiator: true
+        });
+
+        waitingUser.emit("matched", {
+            initiator: false
+        });
 
         waitingUser = null;
 
@@ -42,7 +73,10 @@ io.on("connection", (socket) => {
         socket.emit("waiting");
     }
 
-    // Messages
+    // =========================
+    // CHAT MESSAGES
+    // =========================
+
     socket.on("message", (msg) => {
 
         if (socket.partner) {
@@ -51,18 +85,22 @@ io.on("connection", (socket) => {
 
     });
 
-    // Typing indicator
-socket.on("typing", () => {
+    // =========================
+    // TYPING
+    // =========================
 
-    console.log("TYPING:", socket.id);
+    socket.on("typing", () => {
 
-    if (socket.partner) {
-        socket.partner.emit("typing");
-    }
+        if (socket.partner) {
+            socket.partner.emit("typing");
+        }
 
-});
+    });
 
-    // Next stranger
+    // =========================
+    // NEXT STRANGER
+    // =========================
+
     socket.on("next", () => {
 
         console.log("NEXT CLICKED:", socket.id);
@@ -75,8 +113,10 @@ socket.on("typing", () => {
             oldPartner.emit("partnerDisconnected");
 
             if (waitingUser === null) {
+
                 waitingUser = oldPartner;
                 oldPartner.emit("waiting");
+
             }
         }
 
@@ -87,8 +127,13 @@ socket.on("typing", () => {
             socket.partner = waitingUser;
             waitingUser.partner = socket;
 
-            socket.emit("matched");
-            waitingUser.emit("matched");
+            socket.emit("matched", {
+                initiator: true
+            });
+
+            waitingUser.emit("matched", {
+                initiator: false
+            });
 
             waitingUser = null;
 
@@ -96,10 +141,15 @@ socket.on("typing", () => {
 
             waitingUser = socket;
             socket.emit("waiting");
+
         }
+
     });
 
-    // Disconnect
+    // =========================
+    // DISCONNECT
+    // =========================
+
     socket.on("disconnect", () => {
 
         console.log("Disconnected:", socket.id);
@@ -118,7 +168,10 @@ socket.on("typing", () => {
             socket.partner.partner = null;
 
             waitingUser = socket.partner;
+
+            socket.partner.emit("waiting");
         }
+
     });
 
 });
